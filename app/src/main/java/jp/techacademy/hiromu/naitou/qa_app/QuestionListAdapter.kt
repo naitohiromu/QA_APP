@@ -48,8 +48,8 @@ class QuestionsListAdapter(context: Context) : BaseAdapter() {
                 .copy(Bitmap.Config.ARGB_8888, true)
             binding.imageView.setImageBitmap(image)
         }
-
         return view
+
     }
 
     fun setQuestionArrayList(questionArrayList: ArrayList<Question>) {

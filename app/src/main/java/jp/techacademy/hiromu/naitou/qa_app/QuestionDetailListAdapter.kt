@@ -7,6 +7,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import com.google.firebase.auth.FirebaseAuth
+import android.util.Log
+import androidx.core.view.isVisible
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.firestore.FirebaseFirestore
+
 import jp.techacademy.hiromu.naitou.qa_app.databinding.ListAnswerBinding
 import jp.techacademy.hiromu.naitou.qa_app.databinding.ListQuestionDetailBinding
 
@@ -15,7 +25,7 @@ class QuestionDetailListAdapter(context: Context, private val question: Question
         private const val TYPE_QUESTION = 0
         private const val TYPE_ANSWER = 1
     }
-
+    private lateinit var databaseReference: DatabaseReference
     private var layoutInflater: LayoutInflater
 
     init {
@@ -46,7 +56,13 @@ class QuestionDetailListAdapter(context: Context, private val question: Question
         return 0
     }
 
+
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+        databaseReference = FirebaseDatabase.getInstance().reference
+
+        val user = FirebaseAuth.getInstance().currentUser
+        var isFavorite : String? = null
+
         if (getItemViewType(position) == TYPE_QUESTION) {
             // ViewBindingを使うための設定
             val binding = if (convertView == null) {
@@ -58,6 +74,52 @@ class QuestionDetailListAdapter(context: Context, private val question: Question
 
             binding.bodyTextView.text = question.body
             binding.nameTextView.text = question.name
+            //お気に入りの表示
+            //val isFavorite = Fire
+            val favorite = question.questionUid
+            val userRef = databaseReference.child(UsersPATH).child(user!!.uid)
+            //val userQuestionRef = databaseReference.child(UsersPATH).child(user!!.uid).child(favorite)
+
+            //var isFavorite : String
+            val childUpdates = hashMapOf<String,Any>()
+
+            //binding.favoriteImageView.isVisible = user != null
+            binding.favoriteImageView.apply{
+                userRef.addListenerForSingleValueEvent(object : ValueEventListener{
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val data = snapshot.value as Map<*,*>?
+                        //Log.d("test",data!!["name"] as String)
+                        try {
+                            isFavorite = data!![favorite] as String
+                            setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
+                        }catch(e: Exception){
+                            isFavorite = "0"
+                            setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                    }
+                })
+                //isFavorite?.let { Log.d("test", it) }
+                setOnClickListener{
+                    if("0" == isFavorite){
+                        childUpdates[favorite] = "1"
+                        isFavorite = "1"
+                        setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
+                    }else if ("1" == isFavorite){
+                        childUpdates[favorite] = "0"
+                        isFavorite = "0"
+                        setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
+                    }
+                    Log.d("favorite",favorite)
+                    //val userRefF = databaseReference.child(UsersPATH).child(user!!.uid).equalTo(favorite)
+                    //val map = dataSnapshot.value as Map<*, *>
+                    //val user_name = map["title"] as? String ?: ""
+                    userRef.updateChildren(childUpdates)
+                    isFavorite?.let { it1 -> Log.d("test", it1) }
+                }
+            }
 
             val bytes = question.imageBytes
             if (bytes.isNotEmpty()) {

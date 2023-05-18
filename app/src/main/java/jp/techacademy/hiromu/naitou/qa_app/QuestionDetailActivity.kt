@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.google.firebase.auth.FirebaseAuth
+import android.util.Log
 import com.google.firebase.database.*
 import jp.techacademy.hiromu.naitou.qa_app.databinding.ActivityQuestionDetailBinding
 
@@ -47,6 +48,7 @@ class QuestionDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityQuestionDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        //val user = FirebaseAuth.getInstance().currentUser
 
         // 渡ってきたQuestionのオブジェクトを保持する
         // API33以上でgetSerializableExtra(key)が非推奨となったため処理を分岐
@@ -67,6 +69,7 @@ class QuestionDetailActivity : AppCompatActivity() {
             // ログイン済みのユーザーを取得する
             val user = FirebaseAuth.getInstance().currentUser
 
+            //Log.d("test",user?.uid.toString())
             if (user == null) {
                 // ログインしていなければログイン画面に遷移させる
                 val intent = Intent(applicationContext, LoginActivity::class.java)

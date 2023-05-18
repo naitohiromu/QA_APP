@@ -12,6 +12,8 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import android.util.Log
+import androidx.core.view.isVisible
 import jp.techacademy.hiromu.naitou.qa_app.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -186,22 +188,32 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
+
         when (item.itemId) {
             R.id.nav_hobby -> {
                 binding.content.toolbar.title = getString(R.string.menu_hobby_label)
+                binding.content.fab.isVisible = true
                 genre = 1
             }
             R.id.nav_life -> {
                 binding.content.toolbar.title = getString(R.string.menu_life_label)
+                binding.content.fab.isVisible = true
                 genre = 2
             }
             R.id.nav_health -> {
                 binding.content.toolbar.title = getString(R.string.menu_health_label)
+                binding.content.fab.isVisible = true
                 genre = 3
             }
             R.id.nav_computer -> {
                 binding.content.toolbar.title = getString(R.string.menu_computer_label)
+                binding.content.fab.isVisible = true
                 genre = 4
+            }
+            R.id.nav_favorite ->{
+                binding.content.toolbar.title = getString(R.string.menu_favorite_label)
+                binding.content.fab.isVisible = false
+                genre = 1
             }
         }
 
@@ -212,6 +224,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         questionArrayList.clear()
         adapter.setQuestionArrayList(questionArrayList)
         binding.content.inner.listView.adapter = adapter
+        //Log.d("test",adapter.toString())
 
         // 選択したジャンルにリスナーを登録する
         if (genreRef != null) {
