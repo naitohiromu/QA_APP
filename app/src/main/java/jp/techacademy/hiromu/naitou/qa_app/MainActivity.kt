@@ -15,7 +15,6 @@ import com.google.firebase.database.*
 import android.util.Log
 import androidx.core.view.isVisible
 import jp.techacademy.hiromu.naitou.qa_app.databinding.ActivityMainBinding
-
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
     private lateinit var binding: ActivityMainBinding
 
@@ -99,11 +98,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //val navigationView = findViewById<NavigationView>(R.id.nav_view)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setSupportActionBar(binding.content.toolbar)
 
+        //Log.d("test",navigationView.toString())
+        //navigationView.menu.findItem(R.id.nav_computer).isVisible = false
+        //binding.navView.menu = "@menu/activity_logout_drawer"
+        //navigationView.addView()
         binding.content.fab.setOnClickListener {
             // ジャンルを選択していない場合はメッセージを表示するだけ
             if (genre == 0) {
@@ -139,9 +143,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.string.app_name
         )
         binding.drawerLayout.addDrawerListener(toggle)
+
         toggle.syncState()
 
         binding.navView.setNavigationItemSelectedListener(this)
+
 
         // Firebase
         databaseReference = FirebaseDatabase.getInstance().reference
@@ -162,8 +168,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onResume() {
         super.onResume()
         val navigationView = findViewById<NavigationView>(R.id.nav_view)
-
+        val user = FirebaseAuth.getInstance().currentUser
         // 1:趣味を既定の選択とする
+        //Log.d("test",navigationView.toString())
+        navigationView.menu.findItem(R.id.nav_favorite).isVisible = user != null
         if(genre == 0) {
             onNavigationItemSelected(navigationView.menu.getItem(0))
         }
@@ -188,35 +196,39 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-
+        val user = FirebaseAuth.getInstance().currentUser
         when (item.itemId) {
             R.id.nav_hobby -> {
                 binding.content.toolbar.title = getString(R.string.menu_hobby_label)
                 binding.content.fab.isVisible = true
                 genre = 1
             }
+
             R.id.nav_life -> {
                 binding.content.toolbar.title = getString(R.string.menu_life_label)
                 binding.content.fab.isVisible = true
                 genre = 2
             }
+
             R.id.nav_health -> {
                 binding.content.toolbar.title = getString(R.string.menu_health_label)
                 binding.content.fab.isVisible = true
                 genre = 3
             }
+
             R.id.nav_computer -> {
                 binding.content.toolbar.title = getString(R.string.menu_computer_label)
                 binding.content.fab.isVisible = true
                 genre = 4
             }
-            R.id.nav_favorite ->{
+
+            R.id.nav_favorite -> {
                 binding.content.toolbar.title = getString(R.string.menu_favorite_label)
                 binding.content.fab.isVisible = false
-                genre = 1
+                genre = 5
             }
-        }
 
+        }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
 
         // ----- 追加:ここから -----
@@ -230,9 +242,111 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (genreRef != null) {
             genreRef!!.removeEventListener(eventListener)
         }
-        genreRef = databaseReference.child(ContentsPATH).child(genre.toString())
-        genreRef!!.addChildEventListener(eventListener)
-        // ----- 追加:ここまで -----
+        if (genre in 1..4) {
+            genreRef = databaseReference.child(ContentsPATH).child(genre.toString())
+            genreRef!!.addChildEventListener(eventListener)
+        } else {
+            genreRef = databaseReference.child(UsersPATH).child(user!!.uid).child("favorite")
+            genreRef!!.addChildEventListener(eventListener)
+        }
+        /*
+        if(user != null) {
+            when (item.itemId) {
+                R.id.nav_hobby -> {
+                    binding.content.toolbar.title = getString(R.string.menu_hobby_label)
+                    binding.content.fab.isVisible = true
+                    genre = 1
+                }
+
+                R.id.nav_life -> {
+                    binding.content.toolbar.title = getString(R.string.menu_life_label)
+                    binding.content.fab.isVisible = true
+                    genre = 2
+                }
+
+                R.id.nav_health -> {
+                    binding.content.toolbar.title = getString(R.string.menu_health_label)
+                    binding.content.fab.isVisible = true
+                    genre = 3
+                }
+
+                R.id.nav_computer -> {
+                    binding.content.toolbar.title = getString(R.string.menu_computer_label)
+                    binding.content.fab.isVisible = true
+                    genre = 4
+                }
+
+                R.id.nav_favorite -> {
+                    binding.content.toolbar.title = getString(R.string.menu_favorite_label)
+                    binding.content.fab.isVisible = false
+                    genre = 5
+                }
+
+            }
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+
+            // ----- 追加:ここから -----
+            // 質問のリストをクリアしてから再度Adapterにセットし、AdapterをListViewにセットし直す
+            questionArrayList.clear()
+            adapter.setQuestionArrayList(questionArrayList)
+            binding.content.inner.listView.adapter = adapter
+            //Log.d("test",adapter.toString())
+
+            // 選択したジャンルにリスナーを登録する
+            if (genreRef != null) {
+                genreRef!!.removeEventListener(eventListener)
+            }
+            if (genre in 1..4) {
+                genreRef = databaseReference.child(ContentsPATH).child(genre.toString())
+                genreRef!!.addChildEventListener(eventListener)
+            } else {
+                genreRef = databaseReference.child(UsersPATH).child(user!!.uid).child("favorite")
+                genreRef!!.addChildEventListener(eventListener)
+            }
+        }else{
+            when (item.itemId) {
+                R.id.nav_hobby -> {
+                    binding.content.toolbar.title = getString(R.string.menu_hobby_label)
+                    binding.content.fab.isVisible = true
+                    genre = 1
+                }
+
+                R.id.nav_life -> {
+                    binding.content.toolbar.title = getString(R.string.menu_life_label)
+                    binding.content.fab.isVisible = true
+                    genre = 2
+                }
+
+                R.id.nav_health -> {
+                    binding.content.toolbar.title = getString(R.string.menu_health_label)
+                    binding.content.fab.isVisible = true
+                    genre = 3
+                }
+
+                R.id.nav_computer -> {
+                    binding.content.toolbar.title = getString(R.string.menu_computer_label)
+                    binding.content.fab.isVisible = true
+                    genre = 4
+                }
+            }
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+
+            // ----- 追加:ここから -----
+            // 質問のリストをクリアしてから再度Adapterにセットし、AdapterをListViewにセットし直す
+            questionArrayList.clear()
+            adapter.setQuestionArrayList(questionArrayList)
+            binding.content.inner.listView.adapter = adapter
+            //Log.d("test",adapter.toString())
+
+            // 選択したジャンルにリスナーを登録する
+            if (genreRef != null) {
+                genreRef!!.removeEventListener(eventListener)
+            }
+            genreRef = databaseReference.child(ContentsPATH).child(genre.toString())
+            genreRef!!.addChildEventListener(eventListener)
+        }
+
+         */
 
         return true
     }
