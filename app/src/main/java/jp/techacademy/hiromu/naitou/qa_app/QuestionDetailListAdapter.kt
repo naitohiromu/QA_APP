@@ -67,6 +67,8 @@ class QuestionDetailListAdapter(context: Context, private val question: Question
 
         val user = FirebaseAuth.getInstance().currentUser
         var isFavorite : String? = null
+        val favorite = question.questionUid
+        //Log.d("user",user.toString())
 
         if (getItemViewType(position) == TYPE_QUESTION) {
             // ViewBindingを使うための設定
@@ -81,56 +83,61 @@ class QuestionDetailListAdapter(context: Context, private val question: Question
             binding.nameTextView.text = question.name
             //お気に入りの表示
             //val isFavorite = Fire
-            val favorite = question.questionUid
-            val userRef = databaseReference.child(UsersPATH).child(user!!.uid)
-            val userFavoriteRef = databaseReference.child(UsersPATH).child(user!!.uid).child("favorite").child(favorite)
-            //Log.d("user",user.uid)
-            //Log.d("favorite",favorite)
+
+            //val favorite = question.questionUid
+            //val userFavoriteRef = databaseReference.child(UsersPATH).child(user!!.uid).child("favorite").child(favorite)
 
             //var isFavorite : String
             val childUpdates = hashMapOf<String,Any>()
 
             //binding.favoriteImageView.isVisible = user != null
-            binding.favoriteImageView.apply{
-                userFavoriteRef.addListenerForSingleValueEvent(object : ValueEventListener{
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        val data = snapshot.value as Map<*,*>?
-                        //Log.d("test",data!!["name"] as String)
-                        try {
-                            data!!["body"] as String
+            if(user != null) {
+                binding.favoriteImageView.isVisible = true
+                val userFavoriteRef = databaseReference.child(UsersPATH).child(user!!.uid).child("favorite").child(favorite)
+                binding.favoriteImageView.apply {
+                    userFavoriteRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val data = snapshot.value as Map<*, *>?
+                            //Log.d("test",data!!["name"] as String)
+                            try {
+                                data!!["body"] as String
+                                isFavorite = "1"
+                                setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
+                            } catch (e: Exception) {
+                                isFavorite = "0"
+                                setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                        }
+                    })
+                    //isFavorite?.let { Log.d("test", it) }
+                    setOnClickListener {
+                        if ("0" == isFavorite) {
+                            childUpdates["body"] = question.body
+                            childUpdates["image"] =
+                                Base64.getEncoder().encodeToString(question.imageBytes)
+                            childUpdates["name"] = question.name
+                            childUpdates["title"] = question.title
+                            childUpdates["uid"] = question.uid
                             isFavorite = "1"
                             setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
-                        }catch(e: Exception){
+                            userFavoriteRef.updateChildren(childUpdates)
+                        } else if ("1" == isFavorite) {
                             isFavorite = "0"
                             setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
+                            userFavoriteRef.removeValue()
                         }
+                        //val userRefF = databaseReference.child(UsersPATH).child(user!!.uid).equalTo(favorite)
+                        //val map = dataSnapshot.value as Map<*, *>
+                        //val user_name = map["title"] as? String ?: ""
+                        isFavorite?.let { it1 -> Log.d("test", it1) }
                     }
-
-                    override fun onCancelled(error: DatabaseError) {
-                    }
-                })
-                //isFavorite?.let { Log.d("test", it) }
-                setOnClickListener{
-                    if("0" == isFavorite){
-                        childUpdates["body"] = question.body
-                        childUpdates["image"] = Base64.getEncoder().encodeToString(question.imageBytes)
-                        childUpdates["name"] = question.name
-                        childUpdates["title"] = question.title
-                        childUpdates["uid"] = question.uid
-                        isFavorite = "1"
-                        setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
-                        userFavoriteRef.updateChildren(childUpdates)
-                    }else if ("1" == isFavorite){
-                        isFavorite = "0"
-                        setImageResource(if (isFavorite == "1") R.drawable.ic_star else R.drawable.ic_star_border)
-                        userFavoriteRef.removeValue()
-                    }
-                    //val userRefF = databaseReference.child(UsersPATH).child(user!!.uid).equalTo(favorite)
-                    //val map = dataSnapshot.value as Map<*, *>
-                    //val user_name = map["title"] as? String ?: ""
-                    isFavorite?.let { it1 -> Log.d("test", it1) }
                 }
             }
+            else
+                binding.favoriteImageView.isVisible = false
 
             val bytes = question.imageBytes
             if (bytes.isNotEmpty()) {
